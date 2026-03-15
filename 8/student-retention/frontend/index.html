@@ -1,0 +1,213 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Retention AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div id="authPage" class="auth-page">
+  <div class="auth-split">
+    <div class="auth-brand">
+      <div class="brand-logo">&#127891;</div>
+      <h1 class="brand-title">Student Retention AI</h1>
+      <p class="brand-sub">AI-powered early warning &amp; academic advisory system</p>
+    </div>
+    <div class="auth-form-panel">
+      <div class="auth-role-tabs">
+        <button class="auth-role-tab active" id="roleAdminBtn" onclick="switchRole('admin')">Admin</button>
+        <button class="auth-role-tab" id="roleStudentBtn" onclick="switchRole('student')">Student</button>
+      </div>
+      <div id="loginView">
+        <h2 class="auth-heading" id="loginHeading">Admin Login</h2>
+        <p class="auth-sub" id="loginSub">Sign in to manage students and analytics</p>
+        <form onsubmit="doLogin(event)">
+          <div class="auth-field">
+            <label id="loginLabel">Username</label>
+            <input type="text" id="loginUser" placeholder="admin" autocomplete="username" required/>
+          </div>
+          <div class="auth-field">
+            <label>Password</label>
+            <div class="pass-wrap">
+              <input type="password" id="loginPass" placeholder="Enter password" autocomplete="current-password" required/>
+              <button type="button" class="pass-toggle" onclick="togglePass('loginPass',this)">show</button>
+            </div>
+          </div>
+          <div id="loginError" class="auth-error" style="display:none"></div>
+          <button type="submit" class="auth-btn" id="loginBtn">Sign In</button>
+        </form>
+        <p class="auth-switch" id="signupSwitch" style="display:none">No account? <a href="#" onclick="showSignup()">Sign Up</a></p>
+        <p class="auth-hint" id="loginHint">Use the credentials you registered with</p>
+        <p class="auth-switch" id="adminSetupLink" style="display:none"><a href="#" onclick="showAdminRegister()">First time? Setup Admin Account</a></p>
+      </div>
+      <div id="signupView" style="display:none">
+        <h2 class="auth-heading">Create Student Account</h2>
+        <p class="auth-sub">Register to access your academic portal</p>
+        <form onsubmit="doSignup(event)">
+          <div class="auth-field"><label>Full Name</label><input type="text" id="signupName" placeholder="Your full name" required/></div>
+          <div class="auth-field"><label>Email</label><input type="email" id="signupEmail" placeholder="you@university.edu" required/></div>
+          <div class="auth-field"><label>Password</label>
+            <div class="pass-wrap">
+              <input type="password" id="signupPass" placeholder="Create a password" required/>
+              <button type="button" class="pass-toggle" onclick="togglePass('signupPass',this)">show</button>
+            </div>
+          </div>
+          <div class="auth-field"><label>Confirm Password</label><input type="password" id="signupConfirm" placeholder="Repeat password" required/></div>
+          <div id="signupError" class="auth-error" style="display:none"></div>
+          <button type="submit" class="auth-btn" id="signupBtn">Create Account</button>
+        </form>
+        <p class="auth-switch">Already registered? <a href="#" onclick="showLogin()">Sign In</a></p>
+      </div>
+      <div id="adminRegisterView" style="display:none">
+        <h2 class="auth-heading">Setup Admin Account</h2>
+        <p class="auth-sub">First-time setup — you will be the only admin</p>
+        <form onsubmit="doAdminRegister(event)">
+          <div class="auth-field"><label>Full Name</label><input type="text" id="adminRegName" placeholder="Your full name" required/></div>
+          <div class="auth-field"><label>Username</label><input type="text" id="adminRegUser" placeholder="Choose a username" required/></div>
+          <div class="auth-field"><label>Password</label>
+            <div class="pass-wrap">
+              <input type="password" id="adminRegPass" placeholder="Create a password" required/>
+              <button type="button" class="pass-toggle" onclick="togglePass('adminRegPass',this)">show</button>
+            </div>
+          </div>
+          <div class="auth-field"><label>Confirm Password</label><input type="password" id="adminRegConfirm" placeholder="Repeat password" required/></div>
+          <div id="adminRegError" class="auth-error" style="display:none"></div>
+          <button type="submit" class="auth-btn" id="adminRegBtn">Create Admin Account</button>
+        </form>
+        <p class="auth-switch"><a href="#" onclick="showLogin()">Back to Login</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="adminApp" style="display:none">
+  <nav class="navbar">
+    <span class="logo">Student Retention AI</span>
+    <div class="nav-links">
+      <button class="nav-btn active" onclick="adminTab('dashboard',this)">Dashboard</button>
+      <button class="nav-btn" onclick="adminTab('students',this)">Students</button>
+      <button class="nav-btn" onclick="adminTab('predict',this)">Risk Predictor</button>
+      <button class="nav-btn" onclick="adminTab('train',this)">Train Model</button>
+    </div>
+    <button class="btn-logout" onclick="logout()">Logout</button>
+  </nav>
+  <div id="admin-dashboard" class="tab-content active">
+    <div class="page-header"><h2>Analytics Dashboard</h2><button class="btn-secondary" onclick="loadAnalytics()">Refresh</button></div>
+    <div id="analyticsContent"><div class="loading-msg">Loading analytics... train the model first if needed.</div></div>
+  </div>
+  <div id="admin-students" class="tab-content">
+    <div class="page-header">
+      <h2>Student Management</h2>
+      <button class="btn-primary" style="width:auto" onclick="openAddModal()">+ Add Student</button>
+      <input type="file" id="csvUpload" accept=".csv" style="margin-left:1rem" onchange="handleCSVUpload(event)"/>
+      <button class="btn-secondary" style="width:auto;margin-left:0.5rem" onclick="triggerCSVUpload()">Upload CSV</button>
+    </div>
+    <div class="search-bar">
+      <input type="text" id="studentSearch" placeholder="Search by name or email..." oninput="filterStudents()"/>
+      <select id="riskFilter" onchange="filterStudents()">
+        <option value="">All Risk Levels</option>
+        <option value="High">High Risk</option>
+        <option value="Medium">Medium Risk</option>
+        <option value="Low">Low Risk</option>
+      </select>
+    </div>
+    <div id="studentsTable"></div>
+  </div>
+  <div id="admin-predict" class="tab-content">
+    <div class="page-header"><h2>Risk Predictor</h2></div>
+    <div class="predict-container">
+      <div class="card form-card">
+        <h3>Student Risk Assessment</h3>
+        <p class="subtitle">Enter student data to predict dropout risk</p>
+        <form id="predictForm" onsubmit="doPrediction(event)">
+          <div class="form-grid">
+            <div class="form-group"><label>GPA (0-10.0)</label><input type="number" id="p_gpa" step="0.01" min="0" max="10" value="5.0" required/></div>
+            <div class="form-group"><label>Attendance (%)</label><input type="number" id="p_attendance" step="0.1" min="0" max="100" value="70" required/></div>
+            <div class="form-group"><label>LMS Logins</label><input type="number" id="p_lms_logins" min="0" value="20" required/></div>
+            <div class="form-group"><label>Assignments Submitted</label><input type="number" id="p_assignments_submitted" min="0" max="20" value="14" required/></div>
+            <div class="form-group"><label>Financial Aid</label><select id="p_financial_aid"><option value="1">Yes</option><option value="0">No</option></select></div>
+            <div class="form-group"><label>Tuition Balance ($)</label><input type="number" id="p_tuition_balance" min="0" value="3000" required/></div>
+            <div class="form-group"><label>Part-time Job</label><select id="p_part_time_job"><option value="0">No</option><option value="1">Yes</option></select></div>
+            <div class="form-group"><label>Age</label><input type="number" id="p_age" min="17" max="60" value="20" required/></div>
+            <div class="form-group"><label>Gender</label><select id="p_gender"><option value="M">Male</option><option value="F">Female</option><option value="Other">Other</option></select></div>
+            <div class="form-group"><label>Major</label><select id="p_major"><option>Engineering</option><option>Business</option><option>Arts</option><option>Science</option><option>Education</option></select></div>
+            <div class="form-group"><label>Year</label><select id="p_year"><option value="1">1st Year</option><option value="2">2nd Year</option><option value="3">3rd Year</option><option value="4">4th Year</option></select></div>
+            <div class="form-group"><label>Previous Failures</label><input type="number" id="p_prev_failures" min="0" max="5" value="1" required/></div>
+            <div class="form-group"><label>Extracurricular</label><select id="p_extracurricular"><option value="0">No</option><option value="1">Yes</option></select></div>
+            <div class="form-group"><label>Mental Health Visits</label><input type="number" id="p_mental_health_visits" min="0" max="10" value="1" required/></div>
+            <div class="form-group"><label>Distance (km)</label><input type="number" id="p_distance_from_campus" step="0.1" min="0" value="10" required/></div>
+          </div>
+          <button type="submit" class="btn-primary" id="predictBtn">Analyze Risk</button>
+        </form>
+      </div>
+      <div class="card result-card" id="resultCard" style="display:none"></div>
+    </div>
+  </div>
+  <div id="admin-train" class="tab-content">
+    <div class="page-header"><h2>Train ML Models</h2></div>
+    <div class="train-container">
+      <div class="card">
+        <p class="subtitle">Trains on 10,000 synthetic records using XGBoost, LightGBM, Random Forest and a Soft-Voting Ensemble</p>
+        <div class="pipeline-steps">
+          <div class="step"><span class="step-num">1</span><span>Generate 10K synthetic dataset</span></div>
+          <div class="step"><span class="step-num">2</span><span>Preprocessing: StandardScaler + OneHotEncoder</span></div>
+          <div class="step"><span class="step-num">3</span><span>Train XGBoost, LightGBM, Random Forest + Soft-Voting Ensemble (80/20 split)</span></div>
+          <div class="step"><span class="step-num">4</span><span>Evaluate AUC, Accuracy, F1-Score</span></div>
+          <div class="step"><span class="step-num">5</span><span>Save best model for predictions</span></div>
+        </div>
+        <button class="btn-primary" id="trainBtn" onclick="trainModels()" style="max-width:220px;margin-top:0.5rem">Start Training</button>
+        <div id="trainStatus" class="train-status"></div>
+      </div>
+      <div id="trainResults" style="display:none;flex-direction:column;gap:1rem">
+        <div class="card">
+          <h3 style="color:#38bdf8;margin-bottom:1rem">Model Performance</h3>
+          <div class="risk-table-wrap"><table id="resultsTable" class="results-table"></table></div>
+        </div>
+        <div class="card chart-card"><h3>Top 10 Feature Importances</h3><canvas id="trainFeatureChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="studentApp" style="display:none">
+  <nav class="navbar">
+    <span class="logo">My Academic Portal</span>
+    <div class="nav-links">
+      <button class="nav-btn active" onclick="studentTab('overview',this)">Overview</button>
+      <button class="nav-btn" onclick="studentTab('performance',this)">Performance</button>
+      <button class="nav-btn" onclick="studentTab('advice',this)">Advice</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:1rem">
+      <span id="studentGreeting" style="color:#94a3b8;font-size:0.9rem"></span>
+      <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+  <div id="student-overview" class="tab-content active">
+    <div id="studentOverviewContent"><div class="loading-msg">Loading your profile...</div></div>
+  </div>
+  <div id="student-performance" class="tab-content">
+    <div id="studentPerfContent"><div class="loading-msg">Loading performance data...</div></div>
+  </div>
+  <div id="student-advice" class="tab-content">
+    <div id="studentAdviceContent"><div class="loading-msg">Loading personalised advice...</div></div>
+  </div>
+</div>
+
+<div id="modalOverlay" class="modal-overlay" style="display:none" onclick="closeModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="modalTitle">Modal</h3>
+      <button class="modal-close" onclick="closeModal()">X</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
