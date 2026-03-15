@@ -1,0 +1,10 @@
+flask
+flask-cors
+pymongo
+certifi
+xgboost
+lightgbm
+scikit-learn
+pandas
+numpy
+gunicorn
