@@ -1,6 +1,7 @@
 ﻿from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-import os, traceback, io
+import os, traceback, io, warnings
+warnings.filterwarnings('ignore')
 from pymongo import MongoClient
 import certifi
 from model import train_models, predict_student, MODEL_PATH
@@ -10,7 +11,8 @@ app = Flask(__name__)
 app.secret_key = 'student_retention_secret_2024'
 CORS(app)
 
-FRONTEND = os.path.join(os.path.dirname(__file__), '..', 'frontend')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FRONTEND = os.path.join(BASE_DIR, 'static')
 MONGO_URI = "mongodb+srv://chegireddypravallikareddy_db_user:oNPMKXqIlCAlOchI@cluster0.3kcpk2h.mongodb.net/?appName=Cluster0"
 client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
 db = client['student_retention']
@@ -37,6 +39,10 @@ def enrich(s):
 def next_student_id():
     last = students_col.find_one(sort=[('student_id', -1)])
     return (last['student_id'] + 1) if last else 1
+
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204
 
 @app.route('/')
 def index():
@@ -76,13 +82,15 @@ def login():
         return jsonify({'status':'error','message':'Invalid admin credentials'}), 401
     student = students_col.find_one({'email':username,'password':password})
     if student:
-        enriched = enrich(serialize(student))
+        s = serialize(student)
         resp = {'status':'success','role':'student','id':student['student_id'],'name':student['name']}
-        # If high risk, add warning message
-        if enriched.get('risk_level') == 'High':
-            resp['warning'] = 'Your academic performance is very low due to these reasons: ' + \
-                ', '.join([e['factor'] for e in enriched.get('explanation',[])])
-            resp['explanation'] = enriched.get('explanation',[])
+        # Only run risk prediction if student has actual academic data
+        has_data = float(s.get('gpa', 0)) > 0 or float(s.get('attendance', 0)) > 0
+        if has_data and os.path.exists(MODEL_PATH):
+            enriched = enrich(s)
+            if enriched.get('risk_level') == 'High':
+                resp['warning'] = 'Your academic profile indicates a high dropout risk.'
+                resp['explanation'] = enriched.get('explanation', [])
         return jsonify(resp)
     return jsonify({'status':'error','message':'Invalid student credentials'}), 401
 
@@ -140,7 +148,7 @@ def delete_student(sid):
 @app.route('/api/admin/analytics', methods=['GET'])
 def analytics():
     if not os.path.exists(MODEL_PATH):
-        return jsonify({'status':'error','message':'Model not trained yet'}), 400
+        return jsonify({'status':'success','data':{},'message':'Model not trained yet — go to Train Model tab first.'})
     students = list(students_col.find())
     if not students:
         return jsonify({'status':'success','data':{}})

@@ -2,9 +2,9 @@ services:
   - type: web
     name: student-retention-ai
     runtime: python
-    rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+rootDir: .
+    buildCommand: mkdir -p backend/static && cp -r frontend/* backend/static/ && pip install -r backend/requirements.txt
+    startCommand: gunicorn app:app --timeout 120 --workers 1
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0

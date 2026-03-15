@@ -33,7 +33,7 @@ function handleCSVUpload(e) {
         alert('Error: ' + data.message);
       }
     })
-    .catch(() => alert('Cannot connect to backend. Make sure Flask is running on port 5000.'));
+    .catch(() => alert('Upload failed. Please try again.'));
 }
 window.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -112,7 +112,7 @@ async function doAdminRegister(e) {
       showLogin();
       document.getElementById('loginHint').textContent = 'Admin account created! Sign in now.';
     } else { err.textContent = data.message; err.style.display = 'block'; }
-  } catch { err.textContent = 'Cannot connect to server. Make sure Flask is running on port 5000.'; err.style.display = 'block'; }
+  } catch { err.textContent = 'Cannot connect to server. Please try again.'; err.style.display = 'block'; }
   finally { btn.disabled = false; btn.textContent = 'Create Admin Account'; }
 }
 
